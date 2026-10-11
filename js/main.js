@@ -6,6 +6,14 @@ const road = new Road(canvas.width / 2, canvas.width * 0.9);
 
 const N = 100;
 const cars = generateCars(N);
+if (localStorage.getItem("bestBrain")) {
+    for (let i = 0; i < cars.length; i++) {
+        cars[i].brain = JSON.parse(localStorage.getItem("bestBrain"));
+        if (i !== 0) {
+            NeuralNetwork.mutate(cars[i].brain, 0.1);
+        }
+    }
+}
 let bestCar = cars[0];
 
 const traffic = [
@@ -17,7 +25,13 @@ const traffic = [
     new Car(road.getLaneCenter(1), -700, 30, 50, "DUMMY", 2, "red"),
     new Car(road.getLaneCenter(2), -700, 30, 50, "DUMMY", 2, "red"),
 ];
+function save() {
+    localStorage.setItem("bestBrain", JSON.stringify(bestCar.brain));
+}
 
+function discard() {
+    localStorage.removeItem("bestBrain");
+}
 animate();
 
 function generateCars(N) {

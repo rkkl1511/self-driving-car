@@ -12,3 +12,16 @@ body {
 #myCanvas {
     background: #555;
 }
+#verticalButtons {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#verticalButtons button {
+    padding: 8px 14px;
+    cursor: pointer;
+}
