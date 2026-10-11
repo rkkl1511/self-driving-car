@@ -2,6 +2,9 @@ const canvas = document.getElementById("myCanvas");
 canvas.width = 200;
 
 const ctx = canvas.getContext("2d");
+const networkCanvas = document.getElementById("networkCanvas");
+networkCanvas.width = 300;
+const networkCtx = networkCanvas.getContext("2d");
 const road = new Road(canvas.width / 2, canvas.width * 0.9);
 
 const N = 100;
@@ -132,5 +135,9 @@ function animate() {
     bestCar.draw(ctx, true);
 
     ctx.restore();
+    // Setting the height also resets the context, so it must come first
+    networkCanvas.height = window.innerHeight;
+    networkCtx.lineDashOffset = -frameCount / 2;
+    Visualizer.drawNetwork(networkCtx, bestCar.brain);
     requestAnimationFrame(animate);
 }
