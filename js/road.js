@@ -10,6 +10,15 @@ class Road {
         const infinity = 1000000;
         this.top = -infinity;
         this.bottom = infinity;
+
+        const topLeft = { x: this.left, y: this.top };
+        const topRight = { x: this.right, y: this.top };
+        const bottomLeft = { x: this.left, y: this.bottom };
+        const bottomRight = { x: this.right, y: this.bottom };
+        this.borders = [
+            [topLeft, bottomLeft],
+            [topRight, bottomRight],
+        ];
     }
 
     getLaneCenter(laneIndex) {
@@ -35,14 +44,11 @@ class Road {
 
         // Solid lines on the left and right edges
         ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.moveTo(this.left, this.top);
-        ctx.lineTo(this.left, this.bottom);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(this.right, this.top);
-        ctx.lineTo(this.right, this.bottom);
-        ctx.stroke();
+        this.borders.forEach((border) => {
+            ctx.beginPath();
+            ctx.moveTo(border[0].x, border[0].y);
+            ctx.lineTo(border[1].x, border[1].y);
+            ctx.stroke();
+        });
     }
 }
