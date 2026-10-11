@@ -41,7 +41,19 @@ function generateCars(N) {
     }
     return cars;
 }
-
+function getStartingBrain() {
+    // 1. Your in-progress training in this browser wins
+    const saved = localStorage.getItem("bestBrain");
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    // 2. Otherwise use the brain shipped with the project
+    if (typeof SAVED_BRAIN !== "undefined" && SAVED_BRAIN) {
+        return SAVED_BRAIN;
+    }
+    // 3. Otherwise start from random
+    return null;
+}
 function startGeneration() {
     cars = generateCars(N);
     traffic = createTraffic();
@@ -51,10 +63,11 @@ function startGeneration() {
     lastProgressFrame = 0;
     progressY = Infinity;
 
-    const saved = localStorage.getItem("bestBrain");
-    if (saved) {
+    const start = getStartingBrain();
+    if (start) {
+        const text = JSON.stringify(start);
         for (let i = 0; i < cars.length; i++) {
-            cars[i].brain = JSON.parse(saved);
+            cars[i].brain = JSON.parse(text);
             if (i !== 0) {
                 NeuralNetwork.mutate(cars[i].brain, 0.1);
             }
@@ -83,6 +96,18 @@ function discard() {
     startGeneration();
 }
 
+function exportBrain() {
+    const brain =
+        localStorage.getItem("bestBrain") || JSON.stringify(bestCar.brain);
+    const content = "const SAVED_BRAIN = " + brain + ";\n";
+
+    const blob = new Blob([content], { type: "text/javascript" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "brain.js";
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
 function animate() {
     frameCount++;
 
