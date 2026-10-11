@@ -1,33 +1,45 @@
 class Car {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, controlType, maxSpeed = 3, color = "blue") {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.color = color;
 
         this.speed = 0;
         this.acceleration = 0.2;
-        this.maxSpeed = 3;
+        this.maxSpeed = maxSpeed;
         this.friction = 0.05;
         this.angle = 0;
         this.damaged = false;
 
-        this.sensor = new Sensor(this);
-        this.controls = new Controls();
+        // Only cars you control (and later, AI cars) get sensors
+        if (controlType !== "DUMMY") {
+            this.sensor = new Sensor(this);
+        }
+        this.controls = new Controls(controlType);
+        this.polygon = this.#createPolygon();
     }
 
-    update(roadBorders) {
+    update(roadBorders, traffic) {
         if (!this.damaged) {
             this.#move();
             this.polygon = this.#createPolygon();
-            this.damaged = this.#assessDamage(roadBorders);
+            this.damaged = this.#assessDamage(roadBorders, traffic);
         }
-        this.sensor.update(roadBorders);
+        if (this.sensor) {
+            this.sensor.update(roadBorders, traffic);
+        }
     }
 
-    #assessDamage(roadBorders) {
+    #assessDamage(roadBorders, traffic) {
         for (let i = 0; i < roadBorders.length; i++) {
             if (polysIntersect(this.polygon, roadBorders[i])) {
+                return true;
+            }
+        }
+        for (let i = 0; i < traffic.length; i++) {
+            if (polysIntersect(this.polygon, traffic[i].polygon)) {
                 return true;
             }
         }
@@ -98,9 +110,11 @@ class Car {
     }
 
     draw(ctx) {
-        this.sensor.draw(ctx);
+        if (this.sensor) {
+            this.sensor.draw(ctx);
+        }
 
-        ctx.fillStyle = this.damaged ? "gray" : "black";
+        ctx.fillStyle = this.damaged ? "gray" : this.color;
         ctx.beginPath();
         ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
         for (let i = 1; i < this.polygon.length; i++) {
