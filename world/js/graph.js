@@ -77,6 +77,9 @@ class Graph {
         this.segments.length = 0;
     }
 
+    hash() {
+        return JSON.stringify(this);
+    }
     draw(ctx) {
         for (const seg of this.segments) {
             seg.draw(ctx);
