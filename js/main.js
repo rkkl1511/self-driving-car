@@ -5,34 +5,31 @@ const ctx = canvas.getContext("2d");
 const road = new Road(canvas.width / 2, canvas.width * 0.9);
 
 const N = 100;
-const cars = generateCars(N);
-if (localStorage.getItem("bestBrain")) {
-    for (let i = 0; i < cars.length; i++) {
-        cars[i].brain = JSON.parse(localStorage.getItem("bestBrain"));
-        if (i !== 0) {
-            NeuralNetwork.mutate(cars[i].brain, 0.1);
-        }
-    }
-}
-let bestCar = cars[0];
+const STALL_FRAMES = 500; // about 15 seconds without progress ends the generation
+const FINISH_Y = -3000; // passing this line also ends the generation
 
-const traffic = [
-    new Car(road.getLaneCenter(1), -100, 30, 50, "DUMMY", 2, "red"),
-    new Car(road.getLaneCenter(0), -300, 30, 50, "DUMMY", 2, "red"),
-    new Car(road.getLaneCenter(2), -300, 30, 50, "DUMMY", 2, "red"),
-    new Car(road.getLaneCenter(0), -500, 30, 50, "DUMMY", 2, "red"),
-    new Car(road.getLaneCenter(1), -500, 30, 50, "DUMMY", 2, "red"),
-    new Car(road.getLaneCenter(1), -700, 30, 50, "DUMMY", 2, "red"),
-    new Car(road.getLaneCenter(2), -700, 30, 50, "DUMMY", 2, "red"),
-];
-function save() {
-    localStorage.setItem("bestBrain", JSON.stringify(bestCar.brain));
-}
+let cars;
+let traffic;
+let bestCar;
+let generation = 1;
+let frameCount = 0;
+let lastProgressFrame = 0;
+let progressY = Infinity;
 
-function discard() {
-    localStorage.removeItem("bestBrain");
-}
+startGeneration();
 animate();
+
+function createTraffic() {
+    return [
+        new Car(road.getLaneCenter(1), -100, 30, 50, "DUMMY", 2, "red"),
+        new Car(road.getLaneCenter(0), -300, 30, 50, "DUMMY", 2, "red"),
+        new Car(road.getLaneCenter(2), -300, 30, 50, "DUMMY", 2, "red"),
+        new Car(road.getLaneCenter(0), -500, 30, 50, "DUMMY", 2, "red"),
+        new Car(road.getLaneCenter(1), -500, 30, 50, "DUMMY", 2, "red"),
+        new Car(road.getLaneCenter(1), -700, 30, 50, "DUMMY", 2, "red"),
+        new Car(road.getLaneCenter(2), -700, 30, 50, "DUMMY", 2, "red"),
+    ];
+}
 
 function generateCars(N) {
     const cars = [];
@@ -42,7 +39,50 @@ function generateCars(N) {
     return cars;
 }
 
+function startGeneration() {
+    cars = generateCars(N);
+    traffic = createTraffic();
+    bestCar = cars[0];
+
+    frameCount = 0;
+    lastProgressFrame = 0;
+    progressY = Infinity;
+
+    const saved = localStorage.getItem("bestBrain");
+    if (saved) {
+        for (let i = 0; i < cars.length; i++) {
+            cars[i].brain = JSON.parse(saved);
+            if (i !== 0) {
+                NeuralNetwork.mutate(cars[i].brain, 0.1);
+            }
+        }
+    }
+}
+
+function endGeneration() {
+    // The furthest car of the whole generation, even if it later crashed
+    const furthest = cars.reduce((a, b) => (b.y < a.y ? b : a));
+    localStorage.setItem("bestBrain", JSON.stringify(furthest.brain));
+    localStorage.setItem("bestDistance", Math.round(100 - furthest.y));
+
+    generation++;
+    startGeneration();
+}
+
+function save() {
+    localStorage.setItem("bestBrain", JSON.stringify(bestCar.brain));
+}
+
+function discard() {
+    localStorage.removeItem("bestBrain");
+    localStorage.removeItem("bestDistance");
+    generation = 1;
+    startGeneration();
+}
+
 function animate() {
+    frameCount++;
+
     for (let i = 0; i < traffic.length; i++) {
         traffic[i].update(road.borders, []);
     }
@@ -50,10 +90,29 @@ function animate() {
         cars[i].update(road.borders, traffic);
     }
 
-    // The best car is the one that has gone furthest up the road (smallest y)
     const alive = cars.filter((c) => !c.damaged);
     const pool = alive.length > 0 ? alive : cars;
-    bestCar = pool.find((c) => c.y === Math.min(...pool.map((c) => c.y)));
+    bestCar = pool.reduce((a, b) => (b.y < a.y ? b : a));
+
+    // Track progress to detect cars that are just hovering
+    if (bestCar.y < progressY - 1) {
+        progressY = bestCar.y;
+        lastProgressFrame = frameCount;
+    }
+
+    const stalled = frameCount - lastProgressFrame > STALL_FRAMES;
+    const finished = bestCar.y < FINISH_Y;
+    if (alive.length === 0 || stalled || finished) {
+        endGeneration();
+        requestAnimationFrame(animate);
+        return;
+    }
+
+    document.getElementById("stats").innerHTML =
+        "Generation: " + generation + "<br>" +
+        "Alive: " + alive.length + " / " + N + "<br>" +
+        "Distance: " + Math.round(100 - bestCar.y) + "<br>" +
+        "Best ever: " + (localStorage.getItem("bestDistance") || 0);
 
     canvas.height = window.innerHeight;
 
