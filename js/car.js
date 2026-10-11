@@ -13,9 +13,12 @@ class Car {
         this.angle = 0;
         this.damaged = false;
 
-        // Only cars you control (and later, AI cars) get sensors
+        this.useBrain = controlType === "AI";
+
+        // Only player and AI cars get sensors and a brain
         if (controlType !== "DUMMY") {
             this.sensor = new Sensor(this);
+            this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 4]);
         }
         this.controls = new Controls(controlType);
         this.polygon = this.#createPolygon();
@@ -29,6 +32,19 @@ class Car {
         }
         if (this.sensor) {
             this.sensor.update(roadBorders, traffic);
+
+            // Turn each reading into a number: 0 = nothing seen, close to 1 = very near
+            const offsets = this.sensor.readings.map((s) =>
+                s == null ? 0 : 1 - s.offset
+            );
+            const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+
+            if (this.useBrain) {
+                this.controls.forward = outputs[0];
+                this.controls.left = outputs[1];
+                this.controls.right = outputs[2];
+                this.controls.reverse = outputs[3];
+            }
         }
     }
 
