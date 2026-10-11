@@ -5,7 +5,9 @@ class World {
         roadRoundness = 10,
         buildingWidth = 100,
         buildingMinLength = 100,
-        spacing = 40
+        spacing = 40,
+        treeSize = 30,
+        treeTries = 10
     ) {
         this.graph = graph;
         this.roadWidth = roadWidth;
@@ -13,10 +15,13 @@ class World {
         this.buildingWidth = buildingWidth;
         this.buildingMinLength = buildingMinLength;
         this.spacing = spacing;
+        this.treeSize = treeSize;
+        this.treeTries = treeTries;
 
         this.envelopes = [];
         this.roadBorders = [];
         this.buildings = [];
+        this.trees = [];
 
         this.generate();
     }
@@ -31,6 +36,75 @@ class World {
 
         this.roadBorders = Polygon.union(this.envelopes.map((e) => e.poly));
         this.buildings = this.#generateBuildings();
+        this.trees = this.#generateTrees();
+    }
+
+    #generateTrees() {
+        const points = [
+            ...this.roadBorders.map((s) => [s.p1, s.p2]).flat(),
+            ...this.buildings.map((b) => b.poly.points).flat(),
+        ];
+        if (points.length === 0) {
+            return [];
+        }
+
+        // Area to scatter trees in: everything built, plus a margin
+        const left = Math.min(...points.map((p) => p.x)) - this.treeSize;
+        const right = Math.max(...points.map((p) => p.x)) + this.treeSize;
+        const top = Math.min(...points.map((p) => p.y)) - this.treeSize;
+        const bottom = Math.max(...points.map((p) => p.y)) + this.treeSize;
+
+        const illegalPolys = [
+            ...this.buildings.map((b) => b.poly),
+            ...this.envelopes.map((e) => e.poly),
+        ];
+
+        // Keep the old trees that are still in a valid spot
+        const trees = [];
+        for (const tree of this.trees) {
+            if (this.#isValidTreeSpot(tree.center, illegalPolys, trees)) {
+                trees.push(tree);
+            }
+        }
+
+        // Try to plant new ones at random spots
+        for (let i = 0; i < this.treeTries; i++) {
+            const p = new Point(
+                lerp(left, right, Math.random()),
+                lerp(top, bottom, Math.random())
+            );
+            if (this.#isValidTreeSpot(p, illegalPolys, trees)) {
+                trees.push(new Tree(p, this.treeSize));
+            }
+        }
+
+        // Draw back to front, so trees lower on the screen overlap the ones behind
+        trees.sort((a, b) => a.center.y - b.center.y);
+        return trees;
+    }
+
+    #isValidTreeSpot(p, illegalPolys, trees) {
+        let closeToSomething = false;
+
+        for (const poly of illegalPolys) {
+            const d = poly.distanceToPoint(p);
+            if (d < this.treeSize / 2 || poly.containsPoint(p)) {
+                return false; // on or too near a road or building
+            }
+            if (d < this.treeSize * 2) {
+                closeToSomething = true;
+            }
+        }
+        if (!closeToSomething) {
+            return false; // too far from the city
+        }
+
+        for (const tree of trees) {
+            if (distance(tree.center, p) < this.treeSize) {
+                return false; // too close to another tree
+            }
+        }
+        return true;
     }
 
     #generateBuildings() {
@@ -99,6 +173,11 @@ class World {
         // Buildings
         for (const b of this.buildings) {
             b.draw(ctx, { fill: "white", stroke: "#888", lineWidth: 2 });
+        }
+
+        // Trees
+        for (const tree of this.trees) {
+            tree.draw(ctx);
         }
     }
 }

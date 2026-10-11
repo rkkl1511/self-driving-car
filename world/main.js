@@ -8,7 +8,7 @@ const graphString = localStorage.getItem("graph");
 const graphInfo = graphString ? JSON.parse(graphString) : null;
 const graph = graphInfo ? Graph.load(graphInfo) : new Graph();
 const graphEditor = new GraphEditor(myCanvas, graph);
-const world = new World(graph, 60, 10, 40, 40, 20);
+const world = new World(graph, 60, 10, 40, 40, 20, 35, 100);
 
 let oldGraphHash = graph.hash();
 
