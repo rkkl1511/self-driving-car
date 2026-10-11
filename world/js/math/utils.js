@@ -63,3 +63,14 @@ function getIntersection(A, B, C, D) {
     }
     return null;
 }
+function magnitude(p) {
+    return Math.hypot(p.x, p.y);
+}
+
+function normalize(p) {
+    return scale(p, 1 / magnitude(p));
+}
+
+function dot(p1, p2) {
+    return p1.x * p2.x + p1.y * p2.y;
+}

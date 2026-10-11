@@ -22,4 +22,32 @@ class Segment {
         ctx.stroke();
         ctx.setLineDash([]);
     }
+    length() {
+        return distance(this.p1, this.p2);
+    }
+
+    directionVector() {
+        return normalize(subtract(this.p2, this.p1));
+    }
+
+    projectPoint(point) {
+        const a = subtract(point, this.p1);
+        const b = subtract(this.p2, this.p1);
+        const normB = normalize(b);
+        const scaler = dot(a, normB);
+        return {
+            point: add(this.p1, scale(normB, scaler)),
+            offset: scaler / magnitude(b),
+        };
+    }
+
+    distanceToPoint(point) {
+        const proj = this.projectPoint(point);
+        // The closest spot is on the segment itself
+        if (proj.offset > 0 && proj.offset < 1) {
+            return distance(point, proj.point);
+        }
+        // Otherwise the closest spot is one of the ends
+        return Math.min(distance(point, this.p1), distance(point, this.p2));
+    }
 }

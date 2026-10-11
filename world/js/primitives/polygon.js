@@ -6,6 +6,30 @@ class Polygon {
             this.segments.push(new Segment(points[i - 1], points[i % points.length]));
         }
     }
+    intersectsPoly(poly) {
+        for (const s1 of this.segments) {
+            for (const s2 of poly.segments) {
+                if (getIntersection(s1.p1, s1.p2, s2.p1, s2.p2)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    distanceToPoint(point) {
+        return Math.min(...this.segments.map((s) => s.distanceToPoint(point)));
+    }
+
+    distanceToPoly(poly) {
+        const fromThis = Math.min(
+            ...this.points.map((p) => poly.distanceToPoint(p))
+        );
+        const fromOther = Math.min(
+            ...poly.points.map((p) => this.distanceToPoint(p))
+        );
+        return Math.min(fromThis, fromOther);
+    }
 
     // Cut two polygons wherever their outlines cross
     static break(poly1, poly2) {
