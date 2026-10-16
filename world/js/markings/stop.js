@@ -1,19 +1,9 @@
-class Stop {
+class Stop extends Marking {
     constructor(center, directionVector, width, height) {
-        this.center = center;
-        this.directionVector = directionVector;
-        this.width = width;
-        this.height = height;
+        super(center, directionVector, width, height);
 
-        // A short segment along the road, centered on the marking
-        this.support = new Segment(
-            translate(center, angle(directionVector), height / 2),
-            translate(center, angle(directionVector), -height / 2)
-        );
-        // A rectangle around it (roundness 0 = square corners)
-        this.poly = new Envelope(this.support, width, 0).poly;
-        // The stop line: one short edge of the rectangle, across the road
         this.border = this.poly.segments[2];
+        this.type = "stop";
     }
 
     draw(ctx) {
@@ -22,7 +12,7 @@ class Stop {
         ctx.save();
         ctx.translate(this.center.x, this.center.y);
         ctx.rotate(angle(this.directionVector) - Math.PI / 2);
-        ctx.scale(1, 3); // stretch along the road, like real painted text
+        ctx.scale(1, 3);
 
         ctx.beginPath();
         ctx.textAlign = "center";

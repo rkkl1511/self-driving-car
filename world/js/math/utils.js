@@ -87,3 +87,6 @@ function getNearestSegment(loc, segments, threshold = Number.MAX_SAFE_INTEGER) {
     }
     return nearest;
 }
+function perpendicular(p) {
+    return new Point(-p.y, p.x);
+}

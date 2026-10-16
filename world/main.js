@@ -4,18 +4,36 @@ myCanvas.height = 600;
 
 const ctx = myCanvas.getContext("2d");
 
-const graphString = localStorage.getItem("graph");
-const graphInfo = graphString ? JSON.parse(graphString) : null;
+// Load the saved world. Fall back to the older roads-only save if there is one.
+const worldString = localStorage.getItem("world");
+const worldInfo = worldString ? JSON.parse(worldString) : null;
+const oldGraphString = localStorage.getItem("graph");
+const graphInfo = worldInfo
+    ? worldInfo.graph
+    : oldGraphString
+        ? JSON.parse(oldGraphString)
+        : null;
 const graph = graphInfo ? Graph.load(graphInfo) : new Graph();
 
 const viewport = new Viewport(myCanvas);
 const world = new World(graph, 60);
+if (worldInfo) {
+    for (const m of worldInfo.markings) {
+        world.markings.push(Marking.load(m));
+    }
+}
+
 const graphEditor = new GraphEditor(viewport, graph);
 const stopEditor = new StopEditor(viewport, world);
+const crossingEditor = new CrossingEditor(viewport, world);
 
 const tools = {
     graph: { button: document.getElementById("graphBtn"), editor: graphEditor },
     stop: { button: document.getElementById("stopBtn"), editor: stopEditor },
+    crossing: {
+        button: document.getElementById("crossingBtn"),
+        editor: crossingEditor,
+    },
 };
 
 let oldGraphHash = graph.hash();
@@ -43,7 +61,17 @@ function dispose() {
 }
 
 function save() {
-    localStorage.setItem("graph", JSON.stringify(graph));
+    const info = {
+        graph: graph,
+        markings: world.markings.map((m) => ({
+            type: m.type,
+            center: m.center,
+            directionVector: m.directionVector,
+            width: m.width,
+            height: m.height,
+        })),
+    };
+    localStorage.setItem("world", JSON.stringify(info));
 }
 
 function setMode(mode) {

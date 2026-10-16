@@ -82,10 +82,10 @@ class Graph {
     }
     draw(ctx) {
         for (const seg of this.segments) {
-            seg.draw(ctx);
+            seg.draw(ctx, { color: "#4dabf7", width: 2 });
         }
         for (const point of this.points) {
-            point.draw(ctx);
+            point.draw(ctx, { color: "#4dabf7" });
         }
     }
 }

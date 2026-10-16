@@ -172,7 +172,7 @@ class World {
     draw(ctx) {
         // Road surface
         for (const env of this.envelopes) {
-            env.draw(ctx, { fill: "#BBB", stroke: "#BBB", lineWidth: 15 });
+            env.draw(ctx, { fill: "#4a4a4a", stroke: "#4a4a4a", lineWidth: 15 });
         }
 
         // Clean outer edges of the merged roads
