@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #2b8a3e;
+            overflow: hidden;
+        }
+
+        #hint {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: monospace;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 10px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="hint">Arrow keys: drive &nbsp;|&nbsp; R: reset &nbsp;|&nbsp; Scroll: zoom</div>
+
+    <!-- Car utilities first; the world's utils then override lerp/getIntersection (same behaviour) -->
+    <script src="../js/utils.js"></script>
+    <script src="js/math/utils.js"></script>
+    <script src="js/primitives/point.js"></script>
+    <script src="js/primitives/segment.js"></script>
+    <script src="js/primitives/polygon.js"></script>
+    <script src="js/primitives/envelope.js"></script>
+    <script src="js/graph.js"></script>
+    <script src="js/items/tree.js"></script>
+    <script src="js/markings/marking.js"></script>
+    <script src="js/markings/stop.js"></script>
+    <script src="js/markings/crossing.js"></script>
+    <script src="js/markings/light.js"></script>
+    <script src="js/markings/start.js"></script>
+    <script src="js/markings/target.js"></script>
+    <script src="js/world.js"></script>
+
+    <script src="../js/controls.js"></script>
+    <script src="../js/sensor.js"></script>
+    <script src="../js/network.js"></script>
+    <script src="../js/car.js"></script>
+
+    <script src="saved-world.js"></script>
+    <script src="drive.js"></script>
+</body>
+
+</html>

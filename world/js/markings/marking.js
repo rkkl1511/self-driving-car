@@ -25,6 +25,10 @@ class Marking {
                 return new Crossing(point, dir, info.width, info.height);
             case "light":
                 return new Light(point, dir, info.width, info.height);
+            case "start":
+                return new Start(point, dir, info.width, info.height);
+            case "target":
+                return new Target(point, dir, info.width, info.height);
         }
     }
 

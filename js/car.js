@@ -12,6 +12,7 @@ class Car {
         this.friction = 0.05;
         this.angle = 0;
         this.damaged = false;
+        this.traveled = 0;
 
         this.useBrain = controlType === "AI";
 
@@ -123,6 +124,7 @@ class Car {
 
         this.x -= Math.sin(this.angle) * this.speed;
         this.y -= Math.cos(this.angle) * this.speed;
+        this.traveled += this.speed;
     }
 
     draw(ctx, drawSensor = false) {

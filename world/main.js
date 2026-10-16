@@ -16,7 +16,7 @@ const graphInfo = worldInfo
 const graph = graphInfo ? Graph.load(graphInfo) : new Graph();
 
 const viewport = new Viewport(myCanvas);
-const world = new World(graph, 60);
+const world = new World(graph, 110);
 if (worldInfo) {
     for (const m of worldInfo.markings) {
         world.markings.push(Marking.load(m));
@@ -27,6 +27,8 @@ const graphEditor = new GraphEditor(viewport, graph);
 const stopEditor = new StopEditor(viewport, world);
 const crossingEditor = new CrossingEditor(viewport, world);
 const lightEditor = new LightEditor(viewport, world);
+const startEditor = new StartEditor(viewport, world);
+const targetEditor = new TargetEditor(viewport, world);
 
 const tools = {
     graph: { button: document.getElementById("graphBtn"), editor: graphEditor },
@@ -36,6 +38,8 @@ const tools = {
         editor: crossingEditor,
     },
     light: { button: document.getElementById("lightBtn"), editor: lightEditor },
+    start: { button: document.getElementById("startBtn"), editor: startEditor },
+    target: { button: document.getElementById("targetBtn"), editor: targetEditor },
 };
 
 let oldGraphHash = graph.hash();
@@ -63,8 +67,13 @@ function dispose() {
     graphEditor.dispose();
 }
 
-function save() {
-    const info = {
+function getWorldInfo() {
+    return {
+        roadWidth: world.roadWidth,
+        roadRoundness: world.roadRoundness,
+        buildingWidth: world.buildingWidth,
+        buildingMinLength: world.buildingMinLength,
+        spacing: world.spacing,
         graph: graph,
         markings: world.markings.map((m) => ({
             type: m.type,
@@ -74,7 +83,20 @@ function save() {
             height: m.height,
         })),
     };
-    localStorage.setItem("world", JSON.stringify(info));
+}
+
+function save() {
+    localStorage.setItem("world", JSON.stringify(getWorldInfo()));
+}
+
+function exportWorld() {
+    const content = "const WORLD_DATA = " + JSON.stringify(getWorldInfo()) + ";\n";
+    const blob = new Blob([content], { type: "text/javascript" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "saved-world.js";
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 function setMode(mode) {
