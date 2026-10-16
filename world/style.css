@@ -25,3 +25,8 @@ h1 {
     margin: 0 3px;
     cursor: pointer;
 }
+
+#controls button.active {
+    background: #ffd43b;
+    font-weight: bold;
+}

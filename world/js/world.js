@@ -22,6 +22,7 @@ class World {
         this.roadBorders = [];
         this.buildings = [];
         this.trees = [];
+        this.markings = [];
 
         this.generate();
     }
@@ -37,6 +38,15 @@ class World {
         this.roadBorders = Polygon.union(this.envelopes.map((e) => e.poly));
         this.buildings = this.#generateBuildings();
         this.trees = this.#generateTrees();
+        // Drop markings whose road has been moved or deleted
+        for (let i = this.markings.length - 1; i >= 0; i--) {
+            const onRoad = this.graph.segments.some(
+                (s) => s.distanceToPoint(this.markings[i].center) < this.roadWidth / 2
+            );
+            if (!onRoad) {
+                this.markings.splice(i, 1);
+            }
+        }
     }
 
     #generateTrees() {
@@ -168,6 +178,10 @@ class World {
         // Clean outer edges of the merged roads
         for (const seg of this.roadBorders) {
             seg.draw(ctx, { color: "white", width: 4 });
+        }
+        // Road markings
+        for (const m of this.markings) {
+            m.draw(ctx);
         }
 
         // Buildings
