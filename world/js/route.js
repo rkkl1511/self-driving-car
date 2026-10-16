@@ -103,10 +103,22 @@ class Route {
         }
         return bestProgress;
     }
+    // The point d pixels along the route (clamped to the start and the target)
+    pointAt(d) {
+        d = Math.max(0, Math.min(this.length, d));
+        for (let i = 0; i < this.segments.length; i++) {
+            if (d <= this.cumulative[i + 1]) {
+                const len = this.segments[i].length();
+                const t = len < 0.001 ? 0 : (d - this.cumulative[i]) / len;
+                return lerp2D(this.points[i], this.points[i + 1], t);
+            }
+        }
+        return this.points[this.points.length - 1];
+    }
 
     draw(ctx) {
         for (const seg of this.segments) {
-            seg.draw(ctx, { width: 4, color: "#ffd43b", dash: [10, 10] });
+            seg.draw(ctx, { width: 6, color: "#ffd43b", dash: [14, 10] });
         }
     }
 }

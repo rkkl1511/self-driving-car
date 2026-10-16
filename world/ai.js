@@ -56,14 +56,15 @@ const SETUP_KEY =
     [spawn.pos.x, spawn.pos.y, target ? target.center.x : 0, target ? target.center.y : 0]
         .map(Math.round)
         .join(",");
-const BRAIN_KEY = SETUP_KEY + ":brain";
-const BEST_KEY = SETUP_KEY + ":best";
+const BRAIN_KEY = SETUP_KEY + ":brain2";
+const BEST_KEY = SETUP_KEY + ":best2";
 
 // Training settings
 const N = 100;
 const MUTATION = 0.1;
 const STALL_FRAMES = 240;  // 4 seconds with no progress ends the generation
 const MAX_FRAMES = 3000;   // hard cap of about 50 seconds per generation
+const LOOK_AHEAD = 100;    // how far ahead on the route the car "looks"
 
 let zoom = 1.5;
 let cars = [];
@@ -104,17 +105,16 @@ function scoreOf(car) {
 
 function getStartBrain() {
     const own = localStorage.getItem(BRAIN_KEY);
-    if (own) return JSON.parse(own);
-    if (!allowFallback) return null;
-    const old =
-        localStorage.getItem("cityBrain") || localStorage.getItem("bestBrain");
-    return old ? JSON.parse(old) : null;
+    if (!own) return null;
+    const brain = JSON.parse(own);
+    const expected = cars[0].brain.levels[0].inputs.length;
+    return brain.levels[0].inputs.length === expected ? brain : null;
 }
 
 function startGeneration() {
     cars = [];
     for (let i = 0; i < N; i++) {
-        const car = new Car(spawn.pos.x, spawn.pos.y, 18, 32, "AI", 3);
+        const car = new Car(spawn.pos.x, spawn.pos.y, 18, 32, "AI", 3, "blue", true);
         car.angle = spawn.angle;
         car.progress = 0;
         cars.push(car);
@@ -165,6 +165,26 @@ function discardBrain() {
     startGeneration();
 }
 
+function guidanceFor(car) {
+    if (!route) return [0, 0];
+
+    const look = route.pointAt(car.progress + LOOK_AHEAD);
+    const dx = look.x - car.x;
+    const dy = look.y - car.y;
+
+    // The direction the car is facing
+    const hx = -Math.sin(car.angle);
+    const hy = -Math.cos(car.angle);
+
+    // Signed angle from facing direction to the look-ahead point
+    // (positive = the point is to the right, negative = to the left)
+    const rel = Math.atan2(hx * dy - hy * dx, hx * dx + hy * dy);
+
+    // Turn it into 0..1, reaching 1 at a 90 degree bend
+    const amount = Math.min(1, Math.abs(rel) / (Math.PI / 2));
+    return rel > 0 ? [0, amount] : [amount, 0];
+}
+
 function animate() {
     frame++;
     world.update();
@@ -172,6 +192,7 @@ function animate() {
     let reachedTarget = false;
     for (const car of cars) {
         if (car.damaged) continue;
+        car.guidance = guidanceFor(car);
         car.update(borders, []);
         if (route) {
             car.progress = route.progress(new Point(car.x, car.y));
@@ -218,6 +239,11 @@ function animate() {
 
     world.draw(ctx);
     if (route) route.draw(ctx);
+    if (route) {
+        const look = route.pointAt(bestCar.progress + LOOK_AHEAD);
+        look.draw(ctx, { color: "white", size: 22 });
+        look.draw(ctx, { color: "#ff6b00", size: 14 });
+    }
 
     ctx.globalAlpha = 0.25;
     for (const car of cars) {

@@ -1,5 +1,5 @@
 class Car {
-    constructor(x, y, width, height, controlType, maxSpeed = 3, color = "blue") {
+    constructor(x, y, width, height, controlType, maxSpeed = 3, color = "blue", guided = false) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -15,11 +15,14 @@ class Car {
         this.traveled = 0;
 
         this.useBrain = controlType === "AI";
+        this.guided = guided;
+        this.guidance = [0, 0]; // [route bends left, route bends right]
 
-        // Only player and AI cars get sensors and a brain
         if (controlType !== "DUMMY") {
             this.sensor = new Sensor(this);
-            this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 4]);
+            // Guided cars get two extra inputs and a slightly bigger hidden layer
+            const inputCount = this.sensor.rayCount + (guided ? 2 : 0);
+            this.brain = new NeuralNetwork([inputCount, guided ? 8 : 6, 4]);
         }
         this.controls = new Controls(controlType);
         this.polygon = this.#createPolygon();
@@ -38,7 +41,8 @@ class Car {
             const offsets = this.sensor.readings.map((s) =>
                 s == null ? 0 : 1 - s.offset
             );
-            const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+            const inputs = this.guided ? offsets.concat(this.guidance) : offsets;
+            const outputs = NeuralNetwork.feedForward(inputs, this.brain);
 
             if (this.useBrain) {
                 this.controls.forward = outputs[0];
