@@ -26,6 +26,7 @@ if (worldInfo) {
 const graphEditor = new GraphEditor(viewport, graph);
 const stopEditor = new StopEditor(viewport, world);
 const crossingEditor = new CrossingEditor(viewport, world);
+const lightEditor = new LightEditor(viewport, world);
 
 const tools = {
     graph: { button: document.getElementById("graphBtn"), editor: graphEditor },
@@ -34,6 +35,7 @@ const tools = {
         button: document.getElementById("crossingBtn"),
         editor: crossingEditor,
     },
+    light: { button: document.getElementById("lightBtn"), editor: lightEditor },
 };
 
 let oldGraphHash = graph.hash();
@@ -49,6 +51,7 @@ function animate() {
         oldGraphHash = graph.hash();
     }
 
+    world.update();
     world.draw(ctx);
     for (const tool of Object.values(tools)) {
         tool.editor.display();

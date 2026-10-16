@@ -90,3 +90,6 @@ function getNearestSegment(loc, segments, threshold = Number.MAX_SAFE_INTEGER) {
 function perpendicular(p) {
     return new Point(-p.y, p.x);
 }
+function lerp2D(A, B, t) {
+    return new Point(lerp(A.x, B.x, t), lerp(A.y, B.y, t));
+}

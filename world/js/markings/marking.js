@@ -23,6 +23,8 @@ class Marking {
                 return new Stop(point, dir, info.width, info.height);
             case "crossing":
                 return new Crossing(point, dir, info.width, info.height);
+            case "light":
+                return new Light(point, dir, info.width, info.height);
         }
     }
 

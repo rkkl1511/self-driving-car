@@ -23,6 +23,8 @@ class World {
         this.buildings = [];
         this.trees = [];
         this.markings = [];
+        this.greenDuration = 2000; // milliseconds
+        this.yellowDuration = 1000;
 
         this.generate();
     }
@@ -169,6 +171,60 @@ class World {
         return bases;
     }
 
+    update() {
+        // 1. Group lights by the junction they face, and by the road they sit on
+        const groups = new Map(); // junction point -> Map(road segment -> [lights])
+        for (const m of this.markings) {
+            if (!(m instanceof Light)) continue;
+
+            const seg = getNearestSegment(
+                m.center,
+                this.graph.segments,
+                this.roadWidth
+            );
+            if (!seg) {
+                m.state = "off";
+                continue;
+            }
+
+            const junction =
+                distance(m.center, seg.p1) < distance(m.center, seg.p2)
+                    ? seg.p1
+                    : seg.p2;
+
+            if (!groups.has(junction)) groups.set(junction, new Map());
+            const roads = groups.get(junction);
+            if (!roads.has(seg)) roads.set(seg, []);
+            roads.get(seg).push(m);
+        }
+
+        // 2. Each junction cycles through its roads: green, yellow, then red
+        const slot = this.greenDuration + this.yellowDuration;
+        let groupIndex = 0;
+        for (const roads of groups.values()) {
+            const lightsPerRoad = [...roads.values()];
+            // A lone road still gets a red slot, so it isn't green forever
+            const cycle = Math.max(lightsPerRoad.length, 2) * slot;
+
+            // Each junction starts at a different point in its cycle
+            const offset = groupIndex * 1700;
+            groupIndex++;
+
+            const t = (Date.now() + offset) % cycle;
+            const activeRoad = Math.floor(t / slot);
+            const timeInSlot = t % slot;
+
+            lightsPerRoad.forEach((lights, i) => {
+                let state = "red";
+                if (i === activeRoad) {
+                    state = timeInSlot < this.greenDuration ? "green" : "yellow";
+                }
+                for (const light of lights) {
+                    light.state = state;
+                }
+            });
+        }
+    }
     draw(ctx) {
         // Road surface
         for (const env of this.envelopes) {
